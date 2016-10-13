@@ -6,13 +6,20 @@
 
 (provide define/unroll)
 
-;; TODO : handle internal def context (func with (body ...+))
+;; TODO : handle for loops / do loops
 
 (define-syntax (unroll stx)
   (syntax-parse stx
-    [(_ 0 fname:id (fvar:id ...) fbody:expr e:expr) #'e]
+    [(_ 0 fname:id (fvar:id ...) fbody:expr e:expr)
+     #;(begin (displayln (format "~a" (identifier-binding fname))) #'e)
+     #'e]
     [(_ n:number fname:id (fvar:id ...) fbody:expr e:expr)
-     (syntax-case #'e (let)
+     (syntax-case #'e (let define define/unroll)
+       [(define (fname var ...) body ...) #'e]
+       [(define/unroll n (fname var ...) body ...)
+        #'(define (fname var ...)
+            (unroll n fname (var ...) body body) ...)]
+        
        [(let loop ((var arg-exp) ...) body)
         #'(letrec ([loop (lambda (var ...)
                            (unroll n loop (var ...) body body))])
@@ -32,11 +39,9 @@
 
 (define-syntax (define/unroll stx)
   (syntax-parse stx
-    [(_ n:number (fname:id var:id ...) body)
+    [(_ n:number (fname:id var:id ...) body ...+)
      #'(define (fname var ...)
-         (unroll n fname (var ...) body body))]))
-
-;(define/unroll 1 (fact n u) (if (< n 1) 'caner 'ali))
+         (unroll n fname (var ...) body body) ...)]))
 
 #;(define/unroll 12 (fact n) (if (< n 1) 1
                               (* n (fact (- n 1)))))
@@ -48,7 +53,9 @@
                              (+ (fib (- n 1))
                                 (fib (- n 2)))))
 (define/unroll 12 (sum n)
-  (let loop ([i n] [sum 0])
+  (define/unroll 1 (helper x) (if (<= x 0) 0 (+ x (helper (- x 1)))))
+  
+  (let loop ([i (helper n)] [sum 0])
     (if (<= i 0)
         sum
         (loop (- i 1) (+ sum i)))))
