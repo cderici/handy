@@ -77,10 +77,11 @@
     (values cpu gc total)))
 
 (define (get-results lines rst-file-str)
-  (begin
-    (when (> (length lines) 100)
+  ;(begin
+    #;(when (> (length lines) 100)
       (displayln (format "WARNING : we got ~a results from : ~a" (length lines) rst-file-str) (current-output-port)))
-    (map (lambda (line) (let-values ([(c g t) (get-results-one-line line)]) (string->number t))) (take lines 20))))
+    (map (lambda (line) (let-values ([(c g t) (get-results-one-line line)]) (string->number t))) lines))
+;)
 
 (define (rst-file->time-list rst-file)
   (let* ([f (read-file rst-file)])
