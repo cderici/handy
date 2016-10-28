@@ -19,14 +19,12 @@ results.
  takes a regular function definition and a number, and unrolls the
  recursive calls (basically self inlines) that many times.
 
-- `lambda-lift.rkt` -- This is a very crappy first take on lambda
-  lifting. It works all-right but it's too messy to be useful for
-  anyone (including me) right now. It basically defines a
-  "define/lift" macro (looks very similar to the regular define) which
-  searches for "lift-this" literals inside its body and does really
-  hacky stuff to lift those expressions. I suggest to avoid
-  hacking/trying-to-understand until it doesn't have the "TODO" stuff
-  at the top.
+- `lambda-lift.rkt` -- Defines a "lift-this" form to be used to lift a
+  function definition or an individual `lambda` form (without a free
+  variable) to the top-level. It lifts the given function (and name it
+  like lifted.0) and turns the original function into a macro that
+  transforms all the call sites `(func 1 2)` into something like
+  `(lifted.0 1 2 <free-vars> ...)`.
 
 - `gen-scripts.rkt` -- If you're using PBS on a cluster for benchmarking
 purposes, you might find this useful. It produces bash-scripts ready
