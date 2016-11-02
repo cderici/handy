@@ -1,5 +1,7 @@
 #lang racket
 
+
+
 (require (for-syntax racket/syntax
                      racket
                      syntax/parse
@@ -27,20 +29,21 @@
           (error 'lift-this "cannot lift a lambda expression with a free variable"))
         (with-syntax ([lam-id (syntax-local-lift-expression #'lam)])
           #'lam)])]
-    [(_ (define (f:id arg:id ...) body ...))
-     (define exp (local-expand #'(lambda (arg ...) body ...) 'expression '()))
-     (syntax-parse exp
-       #:literals (#%plain-lambda)
-       [(#%plain-lambda (exp-arg ...) exp-body)
-        (define frees (free-vars #'exp-body))
-        (let ((diff (- (length frees) (length (syntax-e #'(arg ...))))))
-          (with-syntax* ([(f-ids-all ...) frees]
-                         [f-id (syntax-local-lift-expression #'(lambda (f-ids-all ...) exp-body))]
-                         [(f-ids ...) (if (zero? diff) '() (drop frees diff))])
-            #'(define-syntax (f styx)
-                (syntax-parse styx
-                  [(_ actual-args:expr (... ...))
-                   #'(f-id actual-args (... ...) f-ids ...)]))))])]))
+    [(_ (~and def (define (f:id arg:id ...) body ...)))
+     ;; expanding for free-vars (-it only accepts core forms-)
+     (define frees (free-vars (local-expand #'(letrec ([f (lambda (arg ...) body ...)]) f) 'expression '())))
+     
+     (with-syntax* ([(free-ids ...) frees]
+                    [lifted_id (syntax-local-lift-expression
+                                #'(letrec ([g (lambda (arg ... free-ids ...)
+                                                (let-syntax ([f (lambda (stx)
+                                                                  (syntax-parse stx
+                                                                    [(_ act-args (... ...)) #'(g act-args (... ...) free-ids ...)]))])
+                                                  body ...))]) g))])
+       #'(define-syntax (f styx)
+           (syntax-parse styx
+             [(_ actual-args:expr (... ...))
+              #'(lifted_id actual-args (... ...) free-ids ...)])))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -51,10 +54,13 @@
 
   ;; lambda
   ((lift-this (lambda (x) (+ (top-func x) x))) k)
+
+  (lift-this (define (bar x) (+ x x)))
+  (bar 5)
   
   ;; def
-  (lift-this (define (bar x) (+ x k)))
-  (bar 4))
+  (lift-this (define (fact n) (if (<= n 1) 1 (* k (fact (- n 1))))))
+  (fact 4))
+
 
 (foo)
-
