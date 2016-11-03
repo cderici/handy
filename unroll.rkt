@@ -6,7 +6,7 @@
 
 (provide define/unroll)
 
-;; TODO : handle for loops / do loops
+;; TODO : handle for loops
 
 (define-syntax (unroll stx)
   (syntax-parse stx
@@ -14,8 +14,11 @@
      #;(begin (displayln (format "~a" (identifier-binding fname))) #'e)
      #'e]
     [(_ n:number fname:id (fvar:id ...) fbody:expr e:expr)
-     (syntax-case #'e (let define define/unroll)
+     (syntax-parse #'e
+       #:literals (let define define/unroll set!)
        [(define (fname var ...) body ...) #'e]
+       [(define var body) #'e]
+       [(set! var:id body) #'(set! var (unroll n fname (fvar ...) fbody body))]
        [(define/unroll n (fname var ...) body ...)
         #'(define (fname var ...)
             (unroll n fname (var ...) body body) ...)]
@@ -24,16 +27,24 @@
         #'(letrec ([loop (lambda (var ...)
                            (unroll n loop (var ...) body body))])
             (loop arg-exp ...))]
+       [(do ([i:id init:expr step:expr] ...)
+          (stop?:expr finish:expr ...) body:expr ...)
+        (with-syntax ([body #'(if stop?
+                                  (begin finish ...)
+                                  (begin body ... (doloop step ...)))])
+          #'((letrec ([doloop (lambda (i ...)
+                                (unroll n doloop (i ...) body body))])
+            doloop) init ...))]
        #;[((~literal fname) r:expr ...)#'"same"]
        #;[(f:id r:expr ...) #'"different"]
        [(f:id r:expr ...)
         (if (eq? (syntax->datum #'fname)
-                 (syntax->datum #'f:id))
+                 (syntax->datum #'f))
             (with-syntax ([new-n (- (syntax->datum #'n) 1)])
-              #'(let ((fvar r:expr) ...) (unroll new-n fname (fvar ...) fbody fbody)))
-            #'(f:id (unroll n fname (fvar ...) fbody r:expr) ...))]
+              #'(let ((fvar r) ...) (unroll new-n fname (fvar ...) fbody fbody)))
+            #'(f (unroll n fname (fvar ...) fbody r) ...))]
        [(f:expr r:expr ...)
-        #'((unroll n fname (fvar ...) fbody f:expr) (unroll n fname (fvar ...) fbody r:expr) ...)]
+        #'((unroll n fname (fvar ...) fbody f) (unroll n fname (fvar ...) fbody r) ...)]
        [_ #'e])]))
 
 
@@ -52,10 +63,30 @@
 #;(define/unroll 2 (fib n) (if (<= n 2) 1
                              (+ (fib (- n 1))
                                 (fib (- n 2)))))
-(define/unroll 12 (sum n)
+#;(define/unroll 3 (sum n)
   (define/unroll 1 (helper x) (if (<= x 0) 0 (+ x (helper (- x 1)))))
   
   (let loop ([i (helper n)] [sum 0])
     (if (<= i 0)
         sum
         (loop (- i 1) (+ sum i)))))
+
+#;(define/unroll 2 (mutative n)
+  (define sum 0)
+  (set! sum 2)
+  sum)
+
+#;(define/unroll 2 (hede n)
+  (define sum 0)
+  
+  (do ((i 0 (add1 i)))
+    ((>= i 5) sum)
+    (set! sum (add1 sum)))
+    )
+
+
+
+
+
+
+
