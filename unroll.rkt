@@ -4,7 +4,8 @@
                      racket/stxparam
                      syntax/parse))
 
-(provide define/unroll)
+(provide define/unroll unroll)
+;(provide (for-syntax define/unroll))
 
 ;; TODO : handle for loops
 
@@ -22,7 +23,6 @@
        [(define/unroll n (fname var ...) body ...)
         #'(define (fname var ...)
             (unroll n fname (var ...) body body) ...)]
-        
        [(let loop ((var arg-exp) ...) body)
         #'(letrec ([loop (lambda (var ...)
                            (unroll n loop (var ...) body body))])
