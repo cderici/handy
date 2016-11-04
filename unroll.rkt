@@ -16,10 +16,12 @@
      #'e]
     [(_ n:number fname:id (fvar:id ...) fbody:expr e:expr)
      (syntax-parse #'e
-       #:literals (let define define/unroll set!)
+       #:literals (let define define/unroll set! lambda begin)
        [(define (fname var ...) body ...) #'e]
-       [(define var body) #'e]
-       [(set! var:id body) #'(set! var (unroll n fname (fvar ...) fbody body))]
+       [(define var body:expr) #'e]
+       [(set! var:id body:expr) #'(set! var (unroll n fname (fvar ...) fbody body))]
+       [(begin) #'(void)] ;; <- (otherwise errors "begin: empty form not allowed in: (begin)"
+       [(lambda (var:id ...) body:expr ...) #'(lambda (var ...) (unroll n fname (fvar ...) fbody body) ...)]
        [(define/unroll n (fname var ...) body ...)
         #'(define (fname var ...)
             (unroll n fname (var ...) body body) ...)]
@@ -27,10 +29,13 @@
         #'(letrec ([loop (lambda (var ...)
                            (unroll n loop (var ...) body body))])
             (loop arg-exp ...))]
+       [(letlike ([newvar:id rhs:expr] ...) letbody ...)
+        #'(letlike ([newvar (unroll n fname (fvar ...) fbody rhs)] ...)
+                   (unroll n fname (fvar ...) fbody letbody) ...)]
        [(do ([i:id init:expr step:expr] ...)
           (stop?:expr finish:expr ...) body:expr ...)
         (with-syntax ([body #'(if stop?
-                                  (begin finish ...)
+                                  (begin (void) finish ...)
                                   (begin body ... (doloop step ...)))])
           #'((letrec ([doloop (lambda (i ...)
                                 (unroll n doloop (i ...) body body))])
@@ -83,6 +88,14 @@
     ((>= i 5) sum)
     (set! sum (add1 sum)))
     )
+
+#;(define/unroll 2 (let-lambda n)
+  (let ([k (lambda (n) n)])
+    (k 5)))
+
+#;(define/unroll 2 (empty-begin n)  
+  (if 1 2 (begin))
+  )
 
 
 
