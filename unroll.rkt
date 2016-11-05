@@ -1,19 +1,17 @@
 #lang racket
 
-(require (for-syntax (only-in racket/syntax format-id with-syntax*)
-                     racket/stxparam
-                     syntax/parse))
-
 (provide define/unroll unroll)
-;(provide (for-syntax define/unroll))
+
+(require (for-syntax (only-in racket/syntax format-id with-syntax*)
+                     syntax/parse))
 
 ;; TODO : handle for loops
 
 (define-syntax (unroll stx)
   (syntax-parse stx
-    [(_ 0 fname:id (fvar:id ...) fbody:expr e:expr)
-     #;(begin (displayln (format "~a" (identifier-binding fname))) #'e)
-     #'e]
+    #:datum-literals (lift-this)
+    [(_ 0 fname:id (fvar:id ...) fbody:expr e:expr) #'e]
+    [(_ _ _ (_ ...) _ (lift-this e:expr)) #'(lift-this e)]
     [(_ n:number fname:id (fvar:id ...) fbody:expr e:expr)
      (syntax-parse #'e
        #:literals (let define define/unroll set! lambda begin)
@@ -40,8 +38,6 @@
           #'((letrec ([doloop (lambda (i ...)
                                 (unroll n doloop (i ...) body body))])
             doloop) init ...))]
-       #;[((~literal fname) r:expr ...)#'"same"]
-       #;[(f:id r:expr ...) #'"different"]
        [(f:id r:expr ...)
         (if (eq? (syntax->datum #'fname)
                  (syntax->datum #'f))
@@ -98,8 +94,11 @@
   )
 
 
+#;(define/unroll 2 (foo)
 
+  (lift-this (define/unroll 3 (bar n) n))
 
+  3)
 
 
 

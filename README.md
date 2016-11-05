@@ -19,6 +19,15 @@ results.
  takes a regular function definition and a number, and unrolls the
  recursive calls (basically self inlines) that many times.
 
+^
+|-- > These two can interoperate with eachother, i.e. we can lift
+|unrolled functions, or use lift-this inside of a define/unroll. Just
+|for now however (until I figure out a way to put *everything* into the
+|macro expansion), you need to put them into the same module for using
+|both, as they'll have to require eachother (thereby creating a cyclic
+|dependency).
+v
+
 - `lambda-lift.rkt` -- Defines a "lift-this" form to be used to lift a
   function definition or an individual `lambda` form (without a free
   variable) to the top-level. It lifts the given function (and name it
