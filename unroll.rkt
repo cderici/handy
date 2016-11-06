@@ -14,7 +14,7 @@
     [(_ _ _ (_ ...) _ (lift-this e:expr)) #'(lift-this e)]
     [(_ n:number fname:id (fvar:id ...) fbody:expr e:expr)
      (syntax-parse #'e
-       #:literals (let define define/unroll set! lambda begin)
+       #:literals (let define define/unroll set! lambda begin cond do)
        [(define (fname var ...) body ...) #'e]
        [(define var body:expr) #'e]
        [(set! var:id body:expr) #'(set! var (unroll n fname (fvar ...) fbody body))]
@@ -27,6 +27,9 @@
         #'(letrec ([loop (lambda (var ...)
                            (unroll n loop (var ...) body body))])
             (loop arg-exp ...))]
+       [(cond (condition truth:expr) ... (else els:expr))
+        #'(cond ((unroll n fname (fvar ...) fbody condition) (unroll n fname (fvar ...) fbody truth)) ...
+                (else (unroll n fname (fvar ...) fbody els)))]
        [(letlike ([newvar:id rhs:expr] ...) letbody ...)
         #'(letlike ([newvar (unroll n fname (fvar ...) fbody rhs)] ...)
                    (unroll n fname (fvar ...) fbody letbody) ...)]
@@ -99,6 +102,5 @@
   (lift-this (define/unroll 3 (bar n) n))
 
   3)
-
 
 
