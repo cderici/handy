@@ -22,11 +22,11 @@
      
      (syntax-parse exp
        #:literals (#%plain-lambda)
-       [(#%plain-lambda (larg ...) lbody)
+       [(#%plain-lambda (larg ...) lbody ...)
         (with-syntax* ([(free-ids ...) frees]
                        [lifted-id (syntax-local-lift-expression
                                    #'(lambda (free-ids ...)
-                                       (lambda (larg ...) lbody)))])
+                                       (lambda (larg ...) lbody ...)))])
           #'(lifted-id free-ids ...))])]
     [(_ (~and def (define (f:id arg:id ...) body ...)))
      ;; expanding for free-vars (-it only accepts core forms-)
@@ -79,6 +79,11 @@
                (if (<= n 1) 1 (* n (fact (- n 1))))))
   #;(lift-this (define/unroll 2 (fact n) n))
   #;(fact 4)
+
+  #;(lift-this (define (caner)
+               ((lift-this (lambda (x) x)) 3)))
+  ;(caner)
+  ((lift-this (lambda (x) (display "good times") x)) 2)
 )
 
 (func)
