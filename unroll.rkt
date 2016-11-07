@@ -27,8 +27,8 @@
         #'(letrec ([loop (lambda (var ...)
                            (unroll n loop (var ...) body body))])
             (loop arg-exp ...))]
-       [(cond (condition truth:expr) ... (else els:expr))
-        #'(cond ((unroll n fname (fvar ...) fbody condition) (unroll n fname (fvar ...) fbody truth)) ...
+       [(cond (condition truth:expr ...) ... (else els:expr))
+        #'(cond ((unroll n fname (fvar ...) fbody condition) (unroll n fname (fvar ...) fbody truth) ...) ...
                 (else (unroll n fname (fvar ...) fbody els)))]
        [(letlike ([newvar:id rhs:expr] ...) letbody ...)
         #'(letlike ([newvar (unroll n fname (fvar ...) fbody rhs)] ...)
@@ -96,11 +96,9 @@
   (if 1 2 (begin))
   )
 
-
-#;(define/unroll 2 (foo)
-
-  (lift-this (define/unroll 3 (bar n) n))
-
-  3)
+(define/unroll 2 (foo)
+  (define n 2)
+  (cond ([< 1 n] (set! n 3) n)
+        (else 1)))
 
 
