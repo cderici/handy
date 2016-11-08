@@ -33,14 +33,19 @@
        [(letlike ([newvar:id rhs:expr] ...) letbody ...)
         #'(letlike ([newvar (unroll n fname (fvar ...) fbody rhs)] ...)
                    (unroll n fname (fvar ...) fbody letbody) ...)]
-       [(do ([i:id init:expr step:expr] ...)
+       [(do ([i:id init:expr ... step:expr] ...)
           (stop?:expr finish:expr ...) body:expr ...)
-        (with-syntax ([body #'(if stop?
+        ;; we might have some uninitialized ids, let's find'em
+        (define uninit-ids* (map (λ (s) (car (syntax->list s)))
+                                 (filter (λ (s) (= 1 (length (syntax->list s))))
+                                         (syntax->list #'((i init ...) ...)))))
+        (with-syntax ([(uninit-ids ...) uninit-ids*]
+                      [body #'(if stop?
                                   (begin (void) finish ...)
                                   (begin body ... (doloop step ...)))])
           #'((letrec ([doloop (lambda (i ...)
                                 (unroll n doloop (i ...) body body))])
-            doloop) init ...))]
+            doloop) init ... ... uninit-ids ...))]
        [(f:id r:expr ...)
         (if (eq? (syntax->datum #'fname)
                  (syntax->datum #'f))
@@ -97,8 +102,9 @@
   )
 
 (define/unroll 2 (foo)
-  (define n 2)
-  (cond ([< 1 n] (set! n 3) n)
-        (else 1)))
+  (define depth 0)
+  (do ((j 0 (+ j 1))
+       (depth (+ depth 1)))
+    ((= j 36) #f)))
 
 
