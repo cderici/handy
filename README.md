@@ -1,19 +1,15 @@
 
-This is a selection of scripts and programs that I use daily in my
-research. I'm putting them here for (1) backup and easy version
-control (2) that I think they might be useful for others as well.
+This is a selection of scripts and programs that I find (or found
+before) useful in my research and coding. I'm putting them here for
+(1) backup and easy version control (2) they might be useful for
+some others as well.
 
-I work on [Pycket](https://github.com/pycket/pycket), therefore on
-[Racket](https://github.com/racket/racket), trying to understand what
-happens when we try to use Racket bytecode compiler as a frontend for
-Pycket. There are a bunch of optimizations in the Racket compiler that
-either helps or makes it worse for the Pycket's tracing JIT. I'm
-trying to make sense out of it.
+Some of them are (or has been) directly related to research &
+benchmarking and whatnot, others are just fun.
 
-I use [PBS](https://en.wikipedia.org/wiki/Portable_Batch_System) on a
-cluster and [ReBench](https://github.com/smarr/ReBench) for
-benchmarking and [R](https://www.r-project.org/) to analyze the
-results.
+- `random-sexp.rkt` -- a very simple random s-expression
+  generator. Currently generates only flat lists, because, well that's
+  currently what I need.
 
 - `unroll.rkt` -- This defines a useful macro "define/unroll" which
  takes a regular function definition and a number, and unrolls the
@@ -34,6 +30,11 @@ v
   like lifted.0) and turns the original function into a macro that
   transforms all the call sites `(func 1 2)` into something like
   `(lifted.0 1 2 <free-vars> ...)`.
+
+I use [PBS](https://en.wikipedia.org/wiki/Portable_Batch_System) on a
+cluster and [ReBench](https://github.com/smarr/ReBench) for
+benchmarking and [R](https://www.r-project.org/) to analyze the
+results.
 
 - `gen-scripts.rkt` -- If you're using PBS on a cluster for benchmarking
 purposes, you might find this useful. It produces bash-scripts ready
